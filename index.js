@@ -1,122 +1,84 @@
-let container = document.querySelector(".container");
-let gridButton = document.getElementById("submit-grid");
-let clearGridButton = document.getElementById("clear-grid");
-let gridWidth = document.getElementById("width-range");
-let gridHeight = document.getElementById("height-range");
-let colorButton = document.getElementById("color-input");
-let eraseBtn = document.getElementById("erase-btn");
-let paintBtn = document.getElementById("paint-btn");
-let widthValue = document.getElementById("width-value");
-let heightValue = document.getElementById("height-value");
+var playerTurn, moves, isGameOver, span, restartButton;
+playerTurn = "x";
+moves = 0;
+isGameOver = false;
+span = document.getElementsByTagName("span");
+restartButton = '<button onclick="playAgain()"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16"><path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/><path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/></svg></button>';
 
-let events = {
-    mouse: {
-        down: "mousedown",
-        move: "mousemove",
-        up: "mouseup"
-    },
-    touch: {
-        down: "touchstart",
-        mobe: "touchmove",
-        up: "touchend",
-    },
-};
-
-let deviceType = "";
-
-let draw = false;
-let erase = false;
-
-const isTouchDevice = () => {
-    try {
-        document.createEvent("TouchEvent");
-        deviceType = "touch";
-        return true;
-    } catch (e) {
-        deviceType = "mouse";
-        return false;
-    }
-};
-
-isTouchDevice();
-
-gridButton.addEventListener("click", () => {
-    container.innerHTML = "";
-    let count = 0;
-    for (let i = 0; i < gridHeight.value; i++) {
-        count += 2;
-        let div = document.createElement("div");
-        div.classList.add("gridRow");
-
-        for (let j = 0; j < gridWidth.value; j++) {
-            count += 2;
-            let col = document.createElement("div");
-            col.classList.add("gridCol");
-            col.setAttribute("id", `gridCol${count}`);
-            col.addEventListener(events[deviceType].down, () => {
-                draw = true;
-                if (erase) {
-                    col.style.backgroundColor = "transparent";
-                } else {
-                    col.style.backgroundColor = colorButton.value;
-                }
-            });
-
-            col.addEventListener(events[deviceType].move, (e) => {
-                let elementId = document.elementFromPoint(
-                    !isTouchDevice() ? e.clientX : e.touches[0].clientX,
-                    !isTouchDevice() ? e.clientY : e.touches[0].clientY,
-                ).id;
-                checker(elementId);
-            });
-
-            col.addEventListener(events[deviceType].up, () => {
-                draw = false;
-            });
-
-            div.appendChild(col);
-
+function play(y) {
+    if (y.dataset.player == "none" && window.isGameOver == false) {
+        y.innerHTML = playerTurn;
+        y.dataset.player = playerTurn;
+        moves++;
+        if (playerTurn == "x") {
+            playerTurn = "o";
+        } else if (playerTurn == "o") {
+            playerTurn = "x";
         }
-
-        container.appendChild(div);
-
     }
-});
 
-function checker(elementId) {
-    let gridColumns = document.querySelectorAll(".gridCol");
-    gridColumns.forEach((element) => {
-        if (elementId == element.id) {
-            if (draw && !erase) {
-                element.style.backgroundColor = colorButton.value;
-            } else if (draw && erase) {
-                element.style.backgroundColor = "transparent";
-            }
-        }
-    });
+    /* Win Types */
+
+    checkWinner(1, 2, 3);
+    checkWinner(4, 5, 6);
+    checkWinner(7, 8, 9);
+    checkWinner(1, 4, 7);
+    checkWinner(2, 5, 8);
+    checkWinner(3, 6, 9);
+    checkWinner(1, 5, 9);
+    checkWinner(3, 5, 7);
+
+    /* No Winner */
+
+    if (moves == 9 && isGameOver == false) { draw(); }
+
 }
 
-clearGridButton.addEventListener("click", () => {
-    container.innerHTML = "";
-});
+function checkWinner(a, b, c) {
+    a--;
+    b--;
+    c--;
+    if ((span[a].dataset.player === span[b].dataset.player) && (span[b].dataset.player === span[c].dataset.player) && (span[a].dataset.player === span[c].dataset.player) && (span[a].dataset.player === "x" || span[a].dataset.player === "o") && isGameOver == false) {
+        span[a].parentNode.className += " activeBox";
+        span[b].parentNode.className += " activeBox";
+        span[c].parentNode.className += " activeBox";
+        gameOver(a);
+    }
+}
 
-eraseBtn.addEventListener("click", () => {
-    erase = true;
-});
+function playAgain() {
+    document.getElementsByClassName("alert")[0].parentNode.removeChild(document.getElementsByClassName("alert")[0]);
+    resetGame();
+    window.isGameOver = false;
+    for (var k = 0; k < span.length; k++) {
+        span[k].parentNode.className = span[k].parentNode.className.replace("activeBox", "");
+    }
+}
 
-paintBtn.addEventListener("click", () => {
-    erase = false;
-});
+function resetGame() {
+    for (i = 0; i < span.length; i++) {
+        span[i].dataset.player = "none";
+        span[i].innerHTML = "&nbsp;";
+    }
+    playerTurn = "x";
+}
 
-gridWidth.addEventListener("input", () => {
-    widthValue.innerHTML = gridWidth.value < 9 ? `0${gridWidth.value}` : gridWidth.value;
-});
+function gameOver(a) {
+    var gameOverAlertElement = "<b>GAME OVER </b><br><br> Player " + span[a].dataset.player.toUpperCase() + ' Win !!! <br><br>' + restartButton;
+    var div = document.createElement("div");
+    div.className = "alert";
+    div.innerHTML = gameOverAlertElement;
+    document.getElementsByTagName("body")[0].appendChild(div);
+    window.isGameOver = true;
+    moves = 0;
+}
 
-gridHeight.addEventListener("input", () => {
-    heightValue.innerHTML = gridHeight.value < 9 ? `0${gridHeight.value}` : gridHeight.value;
-});
-
-window.onload = () => {
-    gridHeight.value = 0;
-    gridWidth.value = 0;
-};
+function draw() {
+    var drawAlertElement = '<b>DRAW!!!</b><br><br>' + restartButton;
+    var div = document.createElement("div");
+    div.className = "alert";
+    div.innerHTML = drawAlertElement;
+    document.getElementsByTagName("body")[0].appendChild(div);
+    window.isGameOver = true;
+    moves = 0;
+}
